@@ -3,9 +3,14 @@ Programa nodejs para recuperar a lista das ONGS Brasileiras cadastrada no http:/
 
 ## Run
 
+`npm install`
 `node server.js`
+
+## Output
+
+`ongs.csv`
 
 ## Configuração
 
-Ver os comentários dentro do arquivo `server.js` para ler todos.
+Ver dentro do arquivo `server.js`
 

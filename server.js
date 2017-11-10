@@ -3,22 +3,24 @@ var cheerio = require('cheerio');
 var moment = require('moment');
 var request = require('request');
 var slug = require('slug');
+fs = require('fs')
 var go = true;
+
+/******* CONFIGURATION VARIABLES ******/
+/** Number of ONG currently registered in site: 21314 **/
+	var max = 10; // Number of pages to parse
+	var start = 1; // Page id to start parsing
+	var blocksize = 50; // number of call before timeout
+	var blocktime = 2000; // (in ms) time for each block including expected timeout
+/******* END CONFIGURATION ************/
 
 if (go) {
 	go = false;
 
-	fs = require('fs')
-
-//	var max = 21314;
-	var max = 1000;
-	var start = 7000;
-	var requests = 0;
-	var blocksize = 50;
-	var blocktime = 2000; // ms
-
-  var ongs = [];
   var url_base = "http://www.ongsbrasil.com.br/default.asp?Pag=2&Destino=InstituicoesTemplate&CodigoInstituicao=";
+
+	var requests = 0;
+  var ongs = [];
 
   function parseUrl(url) {
 
