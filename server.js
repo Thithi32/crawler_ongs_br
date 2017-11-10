@@ -2,104 +2,109 @@ var http = require('http');
 var cheerio = require('cheerio');
 var moment = require('moment');
 var request = require('request');
+var slug = require('slug');
 var go = true;
 
 if (go) {
 	go = false;
 
-	console.log('Starting at ' + moment().format('LTS'));
 	fs = require('fs')
-	fs.readFile('candidatos.html', 'utf8', function (err,data) {
-	  if (err) {
-	    return console.log(err);
-	  }
-	  var $ = cheerio.load(data);
-	  var c = 0;
-	  var requests = 0;
-	  var delay = 500;
-//	  var max = $('.lista-candidatos a').length;
-	  var max = 4;
-	  var candidatos = [];
 
-	  var getCandidatos = function(a_list) {
-	  	if (a_list && c < max) {
+//	var max = 21314;
+	var max = 1000;
+	var start = 7000;
+	var requests = 0;
+	var blocksize = 50;
+	var blocktime = 2000; // ms
 
-		  	var a = a_list.shift();
-	  	  	var url = a.attribs.href;
-		  	setTimeout(function(){
+  var ongs = [];
+  var url_base = "http://www.ongsbrasil.com.br/default.asp?Pag=2&Destino=InstituicoesTemplate&CodigoInstituicao=";
 
-			  	console.log("" + (c+1) + " =>");
-				request(url, function (error, response, body) {
-				  requests = requests + 1;
-				  if (!error && response.statusCode == 200) {
+  function parseUrl(url) {
 
-					var b = cheerio.load(body);
+		// Send HTTP request
+		request({
+			url: url,
+			encoding: 'latin1',
+		}, function (error, response, body) {
+			requests = requests + 1;
+  		console.log('Receiving request ' + requests);
 
-					var candidato = {
-						"nome": b('.tab-candidato tr:nth-child(1) td').text(),
-						"num": b('.tab-candidato tr:nth-child(2) td').text(),
-						"situacao": b('.tab-candidato tr:nth-child(3) strong').text(),
-						"municipio": b('.tab-candidato tr:nth-child(4) td').text(),
-						"partido": b('.tab-candidato tr:nth-child(5) td').text(),
-						"coalicao": b('.tab-candidato tr:nth-child(6) td').text(),
-						"composicao": b('.tab-candidato tr:nth-child(7) td').text(),
-						"email": b('.tab-candidato tr:nth-child(8) a').text(),
+			if (!error) {
+				var $ = cheerio.load(body);
 
-						"nome_completo": b('.tab-pessoais tr:nth-child(1) td').text(),
-						"sexo": b('.tab-pessoais tr:nth-child(2) td').text(),
-						"idade": b('.tab-pessoais tr:nth-child(3) td').text().replace( /^\D+/g, ''),
-						"nascimento": b('.tab-pessoais tr:nth-child(4) td').text(),
-						"ocupacao": b('.tab-pessoais tr:nth-child(5) td').text(),
-						"instrucao": b('.tab-pessoais tr:nth-child(6) td').text(),
-						"estado_civil": b('.tab-pessoais tr:nth-child(7) td').text(),
-						"municipio_nascimento": b('.tab-pessoais tr:nth-child(9) td').text(),
+				var name = $('.textoh2').text();
+
+				if (name && name.length !== 0) {
+
+					var classificacao = $('.saibamais').first().text();
+					var ong = {
+						'name': name,
+						'classificacao': (classificacao.startsWith("ONG ")) ? classificacao : '',
 					};
 
-					candidatos[candidatos.length] = candidato;
+					$('.table tr').each(function() {
+						var tds = $(this).find('td');
+						var key = slug($(tds[0]).text(), '_').toLowerCase();
+						var value = $(tds[1]).text();
+						ong[key] = value;
+					});
 
-					console.log("=> " + requests);
-					if (requests == max) {
+					ongs.push(ong);
+				} else {
+					console.log('No name for item ' + url);
+				}
 
-						fs.writeFile("candidatos.json", JSON.stringify(candidatos), function(err) {
-						    if(err) {
-						        return console.log(err);
-						    }
-						    console.log("The file candidatos.json was saved!");
-						});
+			} else {
+				console.log('Error for item ' + url);
+			}
 
-						var csv = '';
-						var last = "municipio_nascimento";
-						for (var idx in candidatos) {
-							for(var key in candidatos[idx]) {
-								csv = csv + candidatos[idx][key] + (( key != last ) ? ',' : '');
-							}
-							csv = csv + "\n";
-						}
+			if (requests === max) {
 
-						fs.writeFile("candidatos.csv", csv, function(err) {
-						    if(err) {
-						        return console.log(err);
-						    }
-						    console.log("The file candidatos.csv was saved!");
-						});
-
-						console.log('Ending at ' + moment().format('LTS'));
-
-					}
-
-				  }
+				var csv = '';
+				var keys = {};
+				ongs.forEach(function(ong) {
+					Object.keys(ong).forEach(function(key) {
+						keys[key] = true;
+					});
 				});
 
-			  	c = c + 1;
-			  	getCandidatos(a_list);
+				keys = Object.keys(keys);
+				keys.forEach(function(key) {
+					csv = csv + key + ',';
+				})
+				csv = csv.slice(0,-1) + "\n";
 
-		  	},delay);
-	  	}
-	  }
+				ongs.forEach(function(ong) {
+					keys.forEach(function(key) {
+						if (ong[key]) {
+							csv = csv + ong[key].replace(/,/g,';').trim();
+						}
+						csv = csv + ','
+					})
+					csv = csv.slice(0,-1) + "\n";
+				});
 
-	  getCandidatos([].slice.call($('.lista-candidatos a')));
 
-	});
+				fs.writeFile("ongs.csv", csv, function(err) {
+				    if(err) {
+				        return console.log(err);
+				    }
+				    console.log("The file ongs.csv was saved!");
+				});
 
+				console.log('Ending at ' + moment().format('LTS'));
+
+			}
+		});
+  }
+
+	console.log('Starting at ' + moment().format('LTS'));
+  for (var i = start; i < start + max; i++) {
+  	var timeout = Math.floor((i-start)/blocksize) * blocktime + 1;
+  	var url = url_base + i;
+
+  	setTimeout(parseUrl.bind(null,url), timeout);
+	}
 
 }
