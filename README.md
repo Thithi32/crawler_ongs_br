@@ -1,5 +1,5 @@
-# crawler_vereadorescuritiba
-Programa nodejs para recuperar a lista dos candidatos a vereador de Curitiba publicada no site da Gazeta do Povo
+# crawler_ongs_br
+Programa nodejs para recuperar a lista das ONGS Brasileiras cadastrada no http://www.ongsbrasil.com.br/
 
 ## Run
 
@@ -7,6 +7,5 @@ Programa nodejs para recuperar a lista dos candidatos a vereador de Curitiba pub
 
 ## Configuração
 
-A configuração padrão lê somente 4 candidatos. 
 Ver os comentários dentro do arquivo `server.js` para ler todos.
 
