@@ -8,10 +8,10 @@ var go = true;
 
 /******* CONFIGURATION VARIABLES ******/
 /** Number of ONG currently registered in site: 21314 **/
-	var max = 10; // Number of pages to parse
+	var max = 50; // Number of pages to parse
 	var start = 1; // Page id to start parsing
 	var blocksize = 50; // number of call before timeout
-	var blocktime = 2000; // (in ms) time for each block including expected timeout
+	var blocktime = 5000; // (in ms) time for each block including expected timeout
 /******* END CONFIGURATION ************/
 
 if (go) {
@@ -80,7 +80,7 @@ if (go) {
 				ongs.forEach(function(ong) {
 					keys.forEach(function(key) {
 						if (ong[key]) {
-							csv = csv + ong[key].replace(/,/g,';').trim();
+							csv = csv + ong[key].replace(/,/g, ';').replace(/[\n\r]/g, ' ').trim();
 						}
 						csv = csv + ','
 					})
